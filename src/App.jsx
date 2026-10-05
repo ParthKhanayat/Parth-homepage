@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Github, Code, Triangle, Youtube, Play, Pause, SkipForward, MapPin, CalendarDays, CheckSquare, Square, Pin } from 'lucide-react';
+import { Search, Github, Code, Triangle, Youtube, Play, Pause, SkipForward, MapPin, CalendarDays, CheckSquare, Square, Pin, Link, Plus, X } from 'lucide-react';
 
 const Card = ({ children, className = "", delay = 0, rotate = 0 }) => {
   return (
@@ -19,7 +19,7 @@ const Card = ({ children, className = "", delay = 0, rotate = 0 }) => {
 const GoogleSearch = () => {
   const [focused, setFocused] = useState(false);
   return (
-    <Card className="col-span-12 md:col-span-8 bg-cartoon-yellow flex flex-col justify-center items-center p-8">
+    <Card className="col-span-12 bg-cartoon-yellow flex flex-col justify-center items-center p-8">
       <h1 className="font-display text-5xl md:text-7xl mb-6 tracking-wider text-black drop-shadow-[2px_2px_0px_#fff]">G👀GLE</h1>
       <form action="https://google.com/search" method="GET" className="w-full max-w-2xl relative">
         <input 
@@ -37,21 +37,105 @@ const GoogleSearch = () => {
 };
 
 const PinnedSites = () => {
-  const sites = [
-    { name: 'GitHub', icon: <Github size={32} />, color: 'bg-gray-200', url: 'https://github.com' },
-    { name: 'LeetCode', icon: <Code size={32} />, color: 'bg-cartoon-yellow', url: 'https://leetcode.com' },
-    { name: 'Vercel', icon: <Triangle size={32} fill="currentColor" />, color: 'bg-black text-white', url: 'https://vercel.com' },
-    { name: 'YouTube', icon: <Youtube size={32} />, color: 'bg-red-500 text-white', url: 'https://youtube.com' }
+  const defaultSites = [
+    { id: '1', name: 'GitHub', iconType: 'Github', color: 'bg-gray-200', url: 'https://github.com' },
+    { id: '2', name: 'LeetCode', iconType: 'Code', color: 'bg-cartoon-yellow', url: 'https://leetcode.com' },
+    { id: '3', name: 'Vercel', iconType: 'Triangle', color: 'bg-black text-white', url: 'https://vercel.com' },
+    { id: '4', name: 'YouTube', iconType: 'Youtube', color: 'bg-red-500 text-white', url: 'https://youtube.com' }
   ];
 
+  const [sites, setSites] = useState(() => {
+    const saved = localStorage.getItem('pinned-sites');
+    if (saved) return JSON.parse(saved);
+    return defaultSites;
+  });
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [newSite, setNewSite] = useState({ name: '', url: '' });
+
+  useEffect(() => {
+    localStorage.setItem('pinned-sites', JSON.stringify(sites));
+  }, [sites]);
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    if (!newSite.name || !newSite.url) return;
+    
+    let formattedUrl = newSite.url;
+    if (!formattedUrl.startsWith('http')) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+
+    const newEntry = {
+      id: Date.now().toString(),
+      name: newSite.name,
+      iconType: 'Link',
+      color: 'bg-white',
+      url: formattedUrl
+    };
+    
+    setSites([...sites, newEntry]);
+    setNewSite({ name: '', url: '' });
+    setIsAdding(false);
+  };
+
+  const removeSite = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSites(sites.filter(s => s.id !== id));
+  };
+
+  const renderIcon = (type, url) => {
+    switch(type) {
+      case 'Github': return <Github size={32} />;
+      case 'Code': return <Code size={32} />;
+      case 'Triangle': return <Triangle size={32} fill="currentColor" />;
+      case 'Youtube': return <Youtube size={32} />;
+      default: return <img src={`https://www.google.com/s2/favicons?domain=${url}&sz=64`} alt="icon" className="w-8 h-8 rounded-sm" />;
+    }
+  };
+
   return (
-    <Card delay={0.1} className="col-span-12 md:col-span-4 bg-cartoon-blue grid grid-cols-2 gap-4">
-      {sites.map((site, i) => (
-        <a key={i} href={site.url} className={`flex flex-col items-center justify-center p-4 border-4 border-black rounded-lg shadow-brutal hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all ${site.color}`}>
-          {site.icon}
-          <span className="font-pixel text-[10px] mt-2 font-bold uppercase">{site.name}</span>
-        </a>
-      ))}
+    <Card delay={0.1} className="col-span-12 bg-cartoon-blue flex flex-col gap-4">
+      <div className="flex justify-between items-center bg-black text-white p-2 border-4 border-black shadow-brutal">
+        <h2 className="font-pixel text-xs sm:text-sm">Pinned Sites</h2>
+        <button onClick={() => setIsAdding(!isAdding)} className="bg-cartoon-yellow text-black p-1 border-2 border-black hover:bg-yellow-400">
+          <Plus size={20} />
+        </button>
+      </div>
+      
+      {isAdding && (
+        <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2 bg-white p-4 border-4 border-black shadow-brutal">
+          <input 
+            type="text" 
+            placeholder="Name" 
+            value={newSite.name} 
+            onChange={e => setNewSite({...newSite, name: e.target.value})}
+            className="border-2 border-black p-2 font-pixel text-xs flex-1 outline-none focus:border-hot-pink"
+            autoFocus
+          />
+          <input 
+            type="text" 
+            placeholder="URL" 
+            value={newSite.url} 
+            onChange={e => setNewSite({...newSite, url: e.target.value})}
+            className="border-2 border-black p-2 font-pixel text-xs flex-1 outline-none focus:border-hot-pink"
+          />
+          <button type="submit" className="bg-neon-green border-2 border-black p-2 font-pixel text-xs hover:bg-green-400 text-black">Add</button>
+        </form>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {sites.map((site) => (
+          <a key={site.id} href={site.url} className={`relative group flex flex-col items-center justify-center p-4 border-4 border-black rounded-lg shadow-brutal hover:translate-y-1 hover:translate-x-1 hover:shadow-none transition-all ${site.color}`}>
+            <button onClick={(e) => removeSite(e, site.id)} className="absolute -top-3 -right-3 bg-red-500 text-white border-2 border-black rounded-full p-1 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all z-10">
+              <X size={16} />
+            </button>
+            {renderIcon(site.iconType, site.url)}
+            <span className="font-pixel text-[10px] mt-2 font-bold uppercase truncate w-full text-center">{site.name}</span>
+          </a>
+        ))}
+      </div>
     </Card>
   );
 };
